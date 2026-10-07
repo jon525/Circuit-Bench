@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Electrical and physics formula workbench: universal solver, Ohm's wheel, resistors, capacitors and RC timing, cable voltage drop, running costs and SI units.">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Circuit Bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a bench instrument — sticky tab rail, one working panel at a time, inputs left / readout right on wide screens */
+:root{
+  --bg:#eef1f0; --surface:#fbfcfb; --sunk:#e3e8e7; --line:#cdd5d4;
+  --ink:#15202a; --muted:#56636b;
+  --accent:#1747c4; --accent-soft:#dfe7fb;
+  --live:#a35a00; --live-soft:#fbefdc;
+  --warn:#b42318; --warn-soft:#fde8e6; --ok:#17784a;
+  --f-display:"Saira Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1418; --surface:#151d23; --sunk:#1c262d; --line:#2b3841;
+  --ink:#e4eaed; --muted:#93a1a9;
+  --accent:#86a8ff; --accent-soft:#1c2a4a;
+  --live:#f2b45a; --live-soft:#2e2414;
+  --warn:#ff8a7a; --warn-soft:#3a1b18; --ok:#5fd39a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1418; --surface:#151d23; --sunk:#1c262d; --line:#2b3841;
+  --ink:#e4eaed; --muted:#93a1a9;
+  --accent:#86a8ff; --accent-soft:#1c2a4a;
+  --live:#f2b45a; --live-soft:#2e2414;
+  --warn:#ff8a7a; --warn-soft:#3a1b18; --ok:#5fd39a; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);padding-inline:16px;padding-block:0 48px}
+.wrap{max-width:1080px;margin:0 auto}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;line-height:1.1;text-wrap:balance;margin:0}
+.mono,.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-block:28px 18px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand svg{flex:none}
+.brand h1{font-size:2.1rem;letter-spacing:.01em}
+.brand p{margin:2px 0 0;color:var(--muted);font-size:.9rem}
+.legend{display:flex;gap:14px;font-size:.8rem;color:var(--muted);flex-wrap:wrap}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+.dot.g{background:var(--accent)} .dot.d{background:var(--live)}
+
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:4px;overflow-x:auto;padding-block:8px;border-bottom:1px solid var(--line);scrollbar-width:none;margin-bottom:22px}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs button{flex:none;border:1px solid transparent;background:none;padding:7px 12px;border-radius:999px;cursor:pointer;color:var(--muted);font-weight:500;font-size:.92rem;white-space:nowrap}
+nav.tabs button:hover{color:var(--ink);background:var(--sunk)}
+nav.tabs button[aria-selected="true"]{color:var(--accent);background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
+
+.panel-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.panel-head h2{font-size:1.7rem}
+.panel-head p{margin:4px 0 0;color:var(--muted);max-width:62ch}
+.eyebrow{font:500 .72rem/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+.btn{border:1px solid var(--line);background:var(--surface);padding:7px 12px;border-radius:8px;cursor:pointer;font-size:.88rem}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.btn.primary:hover{color:var(--surface);filter:brightness(1.08)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.chips .label{font-size:.8rem;color:var(--muted);margin-right:2px}
+.chip{border:1px dashed var(--line);background:none;border-radius:999px;padding:4px 11px;font-size:.84rem;cursor:pointer}
+.chip:hover{border-style:solid;border-color:var(--accent);color:var(--accent)}
+
+.split{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:820px){.split{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.stack{display:grid;gap:16px}
+
+/* solver */
+.group h3{font-size:1.05rem;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:10px}
+.cells{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.cell{border:1px solid var(--line);border-radius:8px;padding:9px 10px;background:var(--surface);transition:border-color .15s,background .15s}
+.cell .lab{display:flex;align-items:baseline;gap:8px;margin-bottom:6px}
+.cell .sym{font:600 1.15rem/1 var(--f-display);min-width:1.6em}
+.cell .nm{font-size:.82rem;color:var(--muted);flex:1}
+.cell .tag{font:500 .66rem/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;padding:3px 6px;border-radius:4px}
+.row{display:flex;gap:6px}
+.row input{flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:7px 9px;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.row select,select.sel{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:6px 6px;max-width:7.5em}
+.cell.given{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.cell.given .tag{background:var(--accent-soft);color:var(--accent)}
+.cell.derived{background:var(--live-soft);border-color:color-mix(in srgb,var(--live) 45%,var(--line))}
+.cell.derived input{color:var(--live);font-weight:500;background:var(--surface)}
+.cell.derived .tag{background:var(--surface);color:var(--live)}
+.cell.conflict{border-color:var(--warn);background:var(--warn-soft)}
+.cell .extra{font:.78rem var(--f-mono);color:var(--live);margin-top:5px;min-height:1em}
+
+.readout{position:sticky;top:calc(env(safe-area-inset-top,0px) + 70px)}
+.readout h3{font-size:1.25rem;margin-bottom:4px}
+.status{font-size:.88rem;color:var(--muted);margin:0 0 12px}
+ol.steps{list-style:none;margin:0;padding:0;display:grid;gap:8px;counter-reset:s}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:auto 1fr;gap:10px;padding:9px 10px;background:var(--bg);border-radius:8px;font-size:.88rem}
+ol.steps li::before{content:counter(s);font:600 .78rem/1.6 var(--f-mono);color:var(--live)}
+ol.steps .f{font-family:var(--f-mono);font-weight:500}
+ol.steps .w{color:var(--muted);font-size:.82rem}
+ol.steps .res{font-family:var(--f-mono);color:var(--live);font-weight:500}
+.alert{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:9px 11px;font-size:.86rem;margin-bottom:10px}
+.empty{color:var(--muted);font-size:.9rem;padding:10px;border:1px dashed var(--line);border-radius:8px}
+
+/* wheel */
+.wheel-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:center}
+@media (max-width:760px){.wheel-wrap{grid-template-columns:1fr}}
+#wheel{width:100%;max-width:420px;display:block;margin:0 auto}
+#wheel .seg{cursor:pointer;transition:fill .15s}
+#wheel .seg:hover{fill:var(--accent-soft)}
+#wheel .seg.on{fill:var(--accent)}
+#wheel text{pointer-events:none}
+.big-f{font:600 2.3rem/1 var(--f-display);margin:6px 0 14px}
+.result-line{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-top:1px solid var(--line);padding-top:12px;margin-top:12px;flex-wrap:wrap}
+.result-line .v{font:500 1.6rem/1.1 var(--f-mono);color:var(--live)}
+.field{display:grid;gap:4px;margin-bottom:10px}
+.field>label{font-size:.82rem;color:var(--muted)}
+.field input[type=text],.field input[type=number]{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:7px 9px;font-family:var(--f-mono);min-width:0;width:100%}
+.field select{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:7px 8px;width:100%}
+
+/* lists */
+.seg-toggle{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg-toggle button{border:0;background:var(--surface);padding:6px 14px;cursor:pointer;font-size:.88rem}
+.seg-toggle button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+.listrows{display:grid;gap:8px;margin:12px 0}
+.listrows .lr{display:flex;gap:6px;align-items:center}
+.listrows .lr .idx{font:500 .78rem var(--f-mono);color:var(--muted);width:2.2em}
+.listrows input{flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:7px 9px;font-family:var(--f-mono)}
+.listrows select{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:6px}
+.x{border:0;background:none;color:var(--muted);cursor:pointer;font-size:1.1rem;padding:2px 8px;border-radius:6px}
+.x:hover{color:var(--warn);background:var(--warn-soft)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:.9rem;align-items:baseline}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.kv dd.hi{color:var(--live);font-weight:500;font-size:1.15rem}
+.note{font-size:.82rem;color:var(--muted);margin:12px 0 0;max-width:68ch}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:20px;align-items:start}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:480px){.grid3{grid-template-columns:1fr 1fr}}
+.inline{display:flex;gap:6px}
+.inline input{flex:1;min-width:0}
+.inline select{width:auto!important}
+
+.meter{position:relative;height:14px;background:var(--sunk);border-radius:999px;margin:14px 0 22px;overflow:visible}
+.meter .fill{height:100%;border-radius:999px;background:var(--ok);transition:width .3s}
+.meter .fill.bad{background:var(--warn)}
+.meter .mark{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink)}
+.meter .mark span{position:absolute;top:22px;left:50%;transform:translateX(-50%);font:.72rem var(--f-mono);color:var(--muted);white-space:nowrap}
+.pill{display:inline-block;font:500 .74rem/1 var(--f-mono);padding:4px 8px;border-radius:999px;letter-spacing:.04em}
+.pill.ok{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok)}
+.pill.bad{background:var(--warn-soft);color:var(--warn)}
+
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{text-align:left;padding:8px 8px;border-bottom:1px solid var(--line)}
+th{font-weight:500;color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.06em}
+td.n,th.n{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.scroll{overflow-x:auto}
+.cost td input{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:6px 7px;font-family:var(--f-mono);width:100%;min-width:0}
+.cost td input.name{font-family:var(--f-body);min-width:8em}
+.share{height:6px;background:var(--live);border-radius:3px;margin-top:4px;opacity:.75}
+.totals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+.totals div{background:var(--bg);border-radius:8px;padding:10px 12px}
+.totals b{display:block;font:500 1.3rem var(--f-mono);color:var(--live)}
+.totals small{color:var(--muted);font-size:.78rem}
+@media (max-width:480px){.totals{grid-template-columns:1fr}}
+
+.gloss{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.gloss div{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.gloss b{font:600 1.3rem var(--f-display);margin-right:8px}
+.gloss p{margin:4px 0 0;font-size:.84rem;color:var(--muted)}
+.gloss .u{font:.8rem var(--f-mono);color:var(--accent)}
+
+#rcChart text{font:11px var(--f-mono);fill:var(--muted)}
+footer{margin-top:40px;color:var(--muted);font-size:.8rem;border-top:1px solid var(--line);padding-top:14px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<header class="top">
+  <div class="brand">
+    <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="9" fill="var(--accent)"/><path d="M5 20h6l3-7 4 14 4-14 4 14 3-7h6" fill="none" stroke="var(--surface)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/></svg>
+    <div><h1>Circuit Bench</h1><p>Type what you know. Everything else gets worked out, with the working shown.</p></div>
+  </div>
+  <div class="legend"><span><i class="dot g"></i>you entered</span><span><i class="dot d"></i>calculated</span></div>
+</header>
+
+<nav class="tabs" role="tablist" id="tabs">
+  <button role="tab" data-tab="solve">Solver</button>
+  <button role="tab" data-tab="wheel">Ohm's wheel</button>
+  <button role="tab" data-tab="resistors">Resistors</button>
+  <button role="tab" data-tab="caps">Capacitors &amp; RC</button>
+  <button role="tab" data-tab="cable">Cable drop</button>
+  <button role="tab" data-tab="cost">Running cost</button>
+  <button role="tab" data-tab="units">Units</button>
+</nav>
+
+<!-- SOLVER -->
+<section class="panel" id="p-solve">
+  <div class="panel-head">
+    <div><span class="eyebrow">26 formulas, one form</span><h2>Universal solver</h2>
+    <p>Fill in any values you know, in any units. The solver chains formulas together until it has found everything it can.</p></div>
+    <div class="chips"><span class="label">Examples:</span>
+      <button class="chip" data-preset="kettle">2.4 kW kettle</button>
+      <button class="chip" data-preset="phone">Phone battery</button>
+      <button class="chip" data-preset="led">LED resistor</button>
+      <button class="chip" data-preset="motor">Motor efficiency</button>
+      <button class="chip" data-preset="lift">Lifting a load</button>
+      <button class="btn" id="clearAll">Clear</button>
+    </div>
+  </div>
+  <div class="split">
+    <div class="stack" id="groups"></div>
+    <aside class="card readout" aria-live="polite">
+      <h3>Working</h3>
+      <p class="status" id="status"></p>
+      <div id="alerts"></div>
+      <ol class="steps" id="steps"></ol>
+    </aside>
+  </div>
+</section>
+
+<!-- WHEEL -->
+<section class="panel" id="p-wheel" hidden>
+  <div class="panel-head"><div><span class="eyebrow">Power &amp; Ohm's law</span><h2>Ohm's wheel</h2>
+  <p>All twelve rearrangements of V = I × R and P = V × I. Tap a segment to use that formula.</p></div></div>
+  <div class="wheel-wrap">
+    <svg id="wheel" viewBox="0 0 340 340" role="group" aria-label="Ohm's law wheel"></svg>
+    <div class="card" id="wheelCalc"></div>
+  </div>
+</section>
+
+<!-- RESISTORS -->
+<section class="panel" id="p-resistors" hidden>
+  <div class="panel-head"><div><span class="eyebrow">Circuit resistance</span><h2>Resistors</h2>
+  <p>Combine resistors in series or parallel, and read the colour bands on a through-hole part.</p></div></div>
+  <div class="two">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <h3 style="font-size:1.2rem">Combine</h3>
+        <div class="seg-toggle" id="rMode"><button aria-pressed="true" data-m="s">Series</button><button aria-pressed="false" data-m="p">Parallel</button></div>
+      </div>
+      <div class="listrows" id="rRows"></div>
+      <button class="btn" id="rAdd">+ Add resistor</button>
+      <dl class="kv" style="margin-top:16px" id="rOut"></dl>
+      <p class="note" id="rNote"></p>
+    </div>
+    <div class="card">
+      <h3 style="font-size:1.2rem;margin-bottom:10px">Colour code (4-band)</h3>
+      <svg id="resSvg" viewBox="0 0 320 80" style="width:100%;max-width:420px;display:block;margin:0 auto 12px" aria-hidden="true"></svg>
+      <div class="grid2" id="bands"></div>
+      <div class="result-line"><span class="eyebrow">Value</span><span class="v" id="bandVal"></span></div>
+      <p class="note" id="bandRange"></p>
+    </div>
+  </div>
+</section>
+
+<!-- CAPS -->
+<section class="panel" id="p-caps" hidden>
+  <div class="panel-head"><div><span class="eyebrow">DC capacitance</span><h2>Capacitors &amp; RC timing</h2>
+  <p>Capacitors combine the opposite way to resistors. In an RC circuit, the time constant τ = R × C sets how fast the voltage rises.</p></div></div>
+  <div class="two">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <h3 style="font-size:1.2rem">Combine</h3>
+        <div class="seg-toggle" id="cMode"><button aria-pressed="false" data-m="s">Series</button><button aria-pressed="true" data-m="p">Parallel</button></div>
+      </div>
+      <div class="listrows" id="cRows"></div>
+      <button class="btn" id="cAdd">+ Add capacitor</button>
+      <dl class="kv" style="margin-top:16px" id="cOut"></dl>
+    </div>
+    <div class="card">
+      <h3 style="font-size:1.2rem;margin-bottom:10px">RC charging</h3>
+      <div class="grid3">
+        <div class="field"><label for="rcR">Resistance</label><div class="inline"><input type="text" inputmode="decimal" id="rcR" value="10"><select id="rcRu"></select></div></div>
+        <div class="field"><label for="rcC">Capacitance</label><div class="inline"><input type="text" inputmode="decimal" id="rcC" value="100"><select id="rcCu"></select></div></div>
+        <div class="field"><label for="rcV">Supply</label><div class="inline"><input type="text" inputmode="decimal" id="rcV" value="12"><select id="rcVu"><option value="1">V</option></select></div></div>
+      </div>
+      <svg id="rcChart" viewBox="0 0 340 190" style="width:100%;display:block;margin:6px 0 10px" role="img" aria-label="Capacitor charging curve"></svg>
+      <dl class="kv" id="rcOut"></dl>
+    </div>
+  </div>
+</section>
+
+<!-- CABLE -->
+<section class="panel" id="p-cable" hidden>
+  <div class="panel-head"><div><span class="eyebrow">Conductor formulas</span><h2>Cable voltage drop</h2>
+  <p>Conductor resistance R = ρ × L ÷ A, then the voltage lost along the run at your load current.</p></div></div>
+  <div class="two">
+    <div class="card">
+      <div class="grid2">
+        <div class="field"><label for="cbMat">Conductor</label><select id="cbMat"><option value="0.0172">Copper (ρ 0.0172 Ω·mm²/m)</option><option value="0.0282">Aluminium (ρ 0.0282 Ω·mm²/m)</option></select></div>
+        <div class="field"><label for="cbSize">Size (mm²)</label><select id="cbSize"></select></div>
+        <div class="field"><label for="cbLen">Route length, one way (m)</label><input type="number" id="cbLen" value="30" min="0" step="any"></div>
+        <div class="field"><label for="cbI">Load current (A)</label><input type="number" id="cbI" value="16" min="0" step="any"></div>
+        <div class="field"><label for="cbV">Supply voltage (V)</label><input type="number" id="cbV" value="230" min="0" step="any"></div>
+        <div class="field"><label for="cbType">Circuit</label><select id="cbType"><option value="2">Single-phase / DC (2 wires)</option><option value="1.7320508">Three-phase (line voltage)</option></select></div>
+      </div>
+      <div class="field" style="max-width:220px"><label for="cbLim">Allowed drop (%)</label><input type="number" id="cbLim" value="5" min="0" step="0.5"></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3 style="font-size:1.2rem">Result</h3><span id="cbPill" class="pill"></span></div>
+      <div class="meter" id="cbMeter"><div class="fill" id="cbFill"></div><div class="mark" id="cbMark"><span id="cbMarkL"></span></div></div>
+      <dl class="kv" id="cbOut"></dl>
+      <p class="note">Simplified: resistance only, at 20 °C. Real cables run warmer and AC adds reactance, so the true drop is a little higher. For installation design in Australia, use the AS/NZS 3008.1.1 tables.</p>
+    </div>
+  </div>
+</section>
+
+<!-- COST -->
+<section class="panel" id="p-cost" hidden>
+  <div class="panel-head"><div><span class="eyebrow">Energy in kWh</span><h2>Running cost</h2>
+  <p>E = P × t, priced per kilowatt-hour. The rows below are examples; replace them with your own appliances and the rate on your bill.</p></div>
+  <div class="field" style="min-width:200px;margin:0"><label for="tariff">Rate (cents per kWh)</label><input type="number" id="tariff" value="40" step="0.1" min="0"></div></div>
+  <div class="card">
+    <div class="scroll"><table class="cost"><thead><tr><th>Appliance</th><th class="n">Watts</th><th class="n">Hours / day</th><th class="n">kWh / day</th><th class="n">$ / year</th><th></th></tr></thead><tbody id="costRows"></tbody></table></div>
+    <button class="btn" id="costAdd" style="margin-top:10px">+ Add appliance</button>
+    <div class="totals"><div><small>Per day</small><b id="tDay"></b></div><div><small>Per quarter (91 days)</small><b id="tQ"></b></div><div><small>Per year</small><b id="tY"></b></div></div>
+    <p class="note">Energy charges only. Daily supply charges and solar feed-in credits are not included.</p>
+  </div>
+</section>
+
+<!-- UNITS -->
+<section class="panel" id="p-units" hidden>
+  <div class="panel-head"><div><span class="eyebrow">Reference</span><h2>Units &amp; symbols</h2></div></div>
+  <div class="two">
+    <div class="card">
+      <h3 style="font-size:1.2rem;margin-bottom:10px">SI prefix converter</h3>
+      <div class="grid2">
+        <div class="field"><label for="uVal">Value</label><input type="text" inputmode="decimal" id="uVal" value="4.7"></div>
+        <div class="field"><label for="uBase">Unit</label><select id="uBase"></select></div>
+        <div class="field"><label for="uFrom">From</label><select id="uFrom"></select></div>
+        <div class="field"><label for="uTo">To</label><select id="uTo"></select></div>
+      </div>
+      <div class="result-line"><span class="eyebrow">Answer</span><span class="v" id="uOut"></span></div>
+      <h3 style="font-size:1.05rem;margin:18px 0 6px">Handy conversions</h3>
+      <dl class="kv">
+        <dt>1 kWh</dt><dd>3.6 MJ</dd><dt>1 Ah</dt><dd>3600 C</dd><dt>1 mAh</dt><dd>3.6 C</dd>
+        <dt>1 hp (mechanical)</dt><dd>≈ 745.7 W</dd><dt>Standard gravity g</dt><dd>9.806 65 m/s²</dd><dt>1 kgf</dt><dd>≈ 9.81 N</dd>
+      </dl>
+    </div>
+    <div class="card"><div class="scroll"><table><thead><tr><th>Prefix</th><th>Symbol</th><th class="n">Multiplier</th><th class="n">Example</th></tr></thead><tbody id="prefTable"></tbody></table></div></div>
+  </div>
+  <h3 style="font-size:1.2rem;margin:26px 0 10px">Symbols</h3>
+  <div class="gloss" id="gloss"></div>
+</section>
+
+<footer>Circuit Bench · calculations run in your browser · results rounded to 4 significant figures.</footer>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const PFX=[[1e12,'T'],[1e9,'G'],[1e6,'M'],[1e3,'k'],[1,''],[1e-3,'m'],[1e-6,'µ'],[1e-9,'n'],[1e-12,'p']];
+const num=(x,p=4)=>{if(!isFinite(x))return '—';const n=Number(x.toPrecision(p));return Math.abs(n)>=1e15||(n!==0&&Math.abs(n)<1e-6)?n.toExponential(p-1):n.toLocaleString('en-AU',{maximumFractionDigits:9})};
+function eng(v,u){if(!isFinite(v))return '—';if(v===0)return '0 '+u;const a=Math.abs(v);let p=PFX.find(p=>a>=p[0]*0.99995)||PFX[PFX.length-1];return num(v/p[0])+' '+p[1]+u}
+function fmtTime(s){if(s<60)return eng(s,'s');if(s<3600)return num(s/60)+' min';if(s<86400)return num(s/3600)+' h';return num(s/86400)+' days'}
+const parse=s=>{s=String(s).trim().replace(/,/g,'');if(s==='')return NaN;return Number(s)};
+const money=v=>'$'+v.toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+/* ---------- quantities ---------- */
+const P_UNITS=[['MW',1e6],['kW',1e3],['W',1],['mW',1e-3]];
+const Q={
+ V:{s:'V',n:'Voltage',u:[['kV',1e3],['V',1],['mV',1e-3]],d:1,f:v=>eng(v,'V'),g:'volt: energy per coulomb'},
+ I:{s:'I',n:'Current',u:[['kA',1e3],['A',1],['mA',1e-3],['µA',1e-6]],d:1,f:v=>eng(v,'A'),g:'ampere: flow of charge'},
+ R:{s:'R',n:'Resistance',u:[['MΩ',1e6],['kΩ',1e3],['Ω',1],['mΩ',1e-3]],d:2,f:v=>eng(v,'Ω'),g:'ohm: opposition to current'},
+ P:{s:'P',n:'Power',u:P_UNITS,d:2,f:v=>eng(v,'W'),g:'watt: rate of energy use'},
+ E:{s:'E',n:'Electrical energy',u:[['kWh',3.6e6],['Wh',3600],['MJ',1e6],['kJ',1e3],['J',1]],d:4,f:v=>eng(v,'J')+(v>=36?' · '+(v>=3.6e6?num(v/3.6e6)+' kWh':num(v/3600)+' Wh'):''),g:'joule: energy converted'},
+ t:{s:'t',n:'Time',u:[['s',1],['min',60],['h',3600],['day',86400]],d:0,f:fmtTime,g:'second: duration'},
+ Q:{s:'Q',n:'Charge',u:[['C',1],['mC',1e-3],['µC',1e-6],['Ah',3600],['mAh',3.6]],d:0,f:v=>eng(v,'C')+(v>=3.6?' · '+num(v/3.6)+' mAh':''),g:'coulomb: quantity of electricity'},
+ Pin:{s:'P<sub>in</sub>',n:'Input power',u:P_UNITS,d:2,f:v=>eng(v,'W'),g:'watt: total power supplied'},
+ Pout:{s:'P<sub>out</sub>',n:'Output power',u:P_UNITS,d:2,f:v=>eng(v,'W'),g:'watt: useful power delivered'},
+ eta:{s:'η',n:'Efficiency',u:[['%',0.01]],d:0,f:v=>num(v*100)+' %',g:'percent: output ÷ input'},
+ F:{s:'F',n:'Force',u:[['kN',1e3],['N',1]],d:1,f:v=>eng(v,'N'),g:'newton: push or pull'},
+ m:{s:'m',n:'Mass',u:[['t',1000],['kg',1],['g',1e-3]],d:1,f:v=>eng(v*1000,'g'),g:'kilogram: amount of matter'},
+ a:{s:'a',n:'Acceleration',u:[['m/s²',1],['g₀',9.80665]],d:0,f:v=>num(v)+' m/s²',g:'metres per second squared'},
+ W:{s:'W',n:'Work',u:[['MJ',1e6],['kJ',1e3],['J',1]],d:2,f:v=>eng(v,'J'),g:'joule: force × distance'},
+ d:{s:'d',n:'Distance',u:[['km',1e3],['m',1],['cm',1e-2],['mm',1e-3]],d:1,f:v=>eng(v,'m'),g:'metre: distance moved'}
+};
+const GROUPS=[['Ohm\'s law & power',['V','I','R','P']],['Energy, time & charge',['E','t','Q']],['Efficiency',['Pin','Pout','eta']],['Force & work',['F','m','a','W','d']]];
+const R_=(t,i,f,s)=>({t,i,f,s});
+const RULES=[
+ R_('P',['V','I'],(V,I)=>V*I,'P = V × I'),R_('I',['P','V'],(P,V)=>P/V,'I = P ÷ V'),R_('V',['P','R'],(P,R)=>Math.sqrt(P*R),'V = √(P × R)'),
+ R_('R',['V','P'],(V,P)=>V*V/P,'R = V² ÷ P'),R_('V',['P','I'],(P,I)=>P/I,'V = P ÷ I'),R_('P',['I','R'],(I,R)=>I*I*R,'P = I² × R'),
+ R_('I',['P','R'],(P,R)=>Math.sqrt(P/R),'I = √(P ÷ R)'),R_('R',['P','I'],(P,I)=>P/(I*I),'R = P ÷ I²'),R_('P',['V','R'],(V,R)=>V*V/R,'P = V² ÷ R'),
+ R_('V',['I','R'],(I,R)=>I*R,'V = I × R'),R_('I',['V','R'],(V,R)=>V/R,'I = V ÷ R'),R_('R',['V','I'],(V,I)=>V/I,'R = V ÷ I'),
+ R_('E',['P','t'],(P,t)=>P*t,'E = P × t'),R_('P',['E','t'],(E,t)=>E/t,'P = E ÷ t'),R_('t',['E','P'],(E,P)=>E/P,'t = E ÷ P'),
+ R_('Q',['I','t'],(I,t)=>I*t,'Q = I × t'),R_('I',['Q','t'],(Q,t)=>Q/t,'I = Q ÷ t'),R_('t',['Q','I'],(Q,I)=>Q/I,'t = Q ÷ I'),
+ R_('E',['V','Q'],(V,Q)=>V*Q,'E = V × Q'),R_('V',['E','Q'],(E,Q)=>E/Q,'V = E ÷ Q'),R_('Q',['E','V'],(E,V)=>E/V,'Q = E ÷ V'),
+ R_('eta',['Pout','Pin'],(o,i)=>o/i,'η = P<sub>out</sub> ÷ P<sub>in</sub>'),R_('Pout',['eta','Pin'],(e,i)=>e*i,'P<sub>out</sub> = η × P<sub>in</sub>'),R_('Pin',['Pout','eta'],(o,e)=>o/e,'P<sub>in</sub> = P<sub>out</sub> ÷ η'),
+ R_('F',['m','a'],(m,a)=>m*a,'F = m × a'),R_('m',['F','a'],(F,a)=>F/a,'m = F ÷ a'),R_('a',['F','m'],(F,m)=>F/m,'a = F ÷ m'),
+ R_('W',['F','d'],(F,d)=>F*d,'W = F × d'),R_('F',['W','d'],(W,d)=>W/d,'F = W ÷ d'),R_('d',['W','F'],(W,F)=>W/F,'d = W ÷ F')
+];
+
+/* ---------- build solver ---------- */
+const cells={};
+const gEl=$('#groups');
+GROUPS.forEach(([title,keys])=>{
+  const g=document.createElement('div');g.className='card group';
+  g.innerHTML=`<h3>${title}</h3><div class="cells"></div>`;
+  const wrap=g.querySelector('.cells');
+  keys.forEach(k=>{
+    const q=Q[k],c=document.createElement('div');c.className='cell';
+    const opts=q.u.map((u,i)=>`<option value="${i}"${i===q.d?' selected':''}>${u[0]}</option>`).join('');
+    c.innerHTML=`<div class="lab"><span class="sym">${q.s}</span><span class="nm">${q.n}</span><span class="tag"></span></div>
+      <div class="row"><input type="text" inputmode="decimal" id="in-${k}" aria-label="${q.n}" autocomplete="off"><select id="u-${k}" aria-label="${q.n} unit">${opts}</select></div><div class="extra"></div>`;
+    wrap.appendChild(c);
+    const inp=c.querySelector('input'),sel=c.querySelector('select');
+    cells[k]={el:c,inp,sel,mode:'empty',val:undefined};
+    inp.addEventListener('focus',()=>{if(cells[k].mode==='derived')inp.select()});
+    inp.addEventListener('input',()=>{cells[k].mode=inp.value.trim()?'given':'held';solve()});
+    inp.addEventListener('blur',()=>{if(cells[k].mode==='held'){cells[k].mode='empty';solve()}});
+    sel.addEventListener('change',solve);
+  });
+  gEl.appendChild(g);
+});
+const factor=k=>Q[k].u[cells[k].sel.value][1];
+const toUnit=(k,v)=>String(Number((v/factor(k)).toPrecision(6)));
+
+function solve(){
+  const known={},given={};
+  for(const k in cells){const c=cells[k];if(c.mode==='given'){const v=parse(c.inp.value);if(isFinite(v)){known[k]=v*factor(k);given[k]=1}}}
+  const steps=[];let changed=true,guard=0;
+  while(changed&&guard++<20){changed=false;
+    for(const r of RULES){if(known[r.t]!==undefined)continue;if(!r.i.every(x=>known[x]!==undefined))continue;
+      const v=r.f(...r.i.map(x=>known[x]));if(!isFinite(v)||isNaN(v))continue;
+      known[r.t]=v;steps.push({r,v,ins:r.i.map(x=>[x,known[x]])});changed=true}}
+  // conflicts
+  const conflicts=[],bad=new Set();
+  for(const r of RULES){if(!given[r.t]||!r.i.every(x=>known[x]!==undefined))continue;
+    const v=r.f(...r.i.map(x=>known[x]));const t=known[r.t];
+    if(isFinite(v)&&Math.abs(v-t)>0.005*Math.max(Math.abs(t),Math.abs(v))&&!bad.has(r.t)){bad.add(r.t);conflicts.push(`You entered ${Q[r.t].s} = ${Q[r.t].f(t)}, but ${r.s.split('=')[1].trim()} gives ${Q[r.t].f(v)}. Remove one value so they agree.`)}}
+  if(given.eta&&known.eta>1)conflicts.push('Efficiency above 100% isn\'t physically possible. Check P<sub>in</sub> and P<sub>out</sub>.');
+  // paint cells
+  for(const k in cells){const c=cells[k],ex=c.el.querySelector('.extra'),tag=c.el.querySelector('.tag');
+    c.el.classList.remove('given','derived','conflict');ex.textContent='';tag.textContent='';
+    if(given[k]){c.el.classList.add('given');tag.textContent='given';ex.textContent='= '+Q[k].f(known[k]);if(bad.has(k))c.el.classList.add('conflict')}
+    else if(known[k]!==undefined&&c.mode!=='held'){c.mode='derived';c.el.classList.add('derived');tag.textContent='calc';
+      if(document.activeElement!==c.inp)c.inp.value=toUnit(k,known[k]);ex.textContent='= '+Q[k].f(known[k])}
+    else{if(c.mode==='derived'){c.mode='empty'}if(c.mode==='empty')c.inp.value=''}}
+  // losses
+  if(known.Pin!==undefined&&known.Pout!==undefined){cells.eta.el.querySelector('.extra').textContent+=` · losses ${eng(known.Pin-known.Pout,'W')}`}
+  // readout
+  const nGiven=Object.keys(given).length;
+  $('#status').innerHTML=!nGiven?'Enter at least two related values to start.':steps.length?`${nGiven} value${nGiven>1?'s':''} entered, ${steps.length} found.`:'Add one more related value to start calculating.';
+  $('#alerts').innerHTML=conflicts.map(c=>`<div class="alert">${c}</div>`).join('');
+  $('#steps').innerHTML=steps.length?steps.map(s=>`<li><div><div class="f">${s.r.s}</div><div class="w">with ${s.ins.map(([k,v])=>`${Q[k].s} = ${Q[k].f(v)}`).join(', ')}</div><div class="res">${Q[s.r.t].s} = ${Q[s.r.t].f(s.v)}</div></div></li>`).join(''):'';
+  if(!steps.length&&nGiven)$('#steps').innerHTML='<li style="display:block" class="empty">No formula links these values yet. Try adding voltage, current, power, time or charge.</li>';
+}
+function setVals(obj){for(const k in cells){const c=cells[k];c.mode='empty';c.inp.value='';c.sel.value=Q[k].d}
+  for(const k in obj){const [v,u]=obj[k];const c=cells[k];c.sel.value=Q[k].u.findIndex(x=>x[0]===u);c.inp.value=v;c.mode='given'}solve()}
+const PRESETS={
+  kettle:{V:['230','V'],P:['2.4','kW'],t:['3','min']},
+  phone:{Q:['5000','mAh'],V:['3.85','V']},
+  led:{V:['3','V'],I:['20','mA']},
+  motor:{Pin:['1.5','kW'],Pout:['1.2','kW']},
+  lift:{m:['50','kg'],a:['9.81','m/s²'],d:['2','m']}
+};
+$$('[data-preset]').forEach(b=>b.onclick=()=>setVals(PRESETS[b.dataset.preset]));
+$('#clearAll').onclick=()=>setVals({});
+setVals(PRESETS.kettle);
+
+/* ---------- Ohm's wheel ---------- */
+const WHEEL=[
+ ['V',[['I × R','V',['I','R'],(I,R)=>I*R],['P ÷ I','V',['P','I'],(P,I)=>P/I],['√(P × R)','V',['P','R'],(P,R)=>Math.sqrt(P*R)]]],
+ ['I',[['V ÷ R','I',['V','R'],(V,R)=>V/R],['P ÷ V','I',['P','V'],(P,V)=>P/V],['√(P ÷ R)','I',['P','R'],(P,R)=>Math.sqrt(P/R)]]],
+ ['R',[['V ÷ I','R',['V','I'],(V,I)=>V/I],['V² ÷ P','R',['V','P'],(V,P)=>V*V/P],['P ÷ I²','R',['P','I'],(P,I)=>P/(I*I)]]],
+ ['P',[['V × I','P',['V','I'],(V,I)=>V*I],['I² × R','P',['I','R'],(I,R)=>I*I*R],['V² ÷ R','P',['V','R'],(V,R)=>V*V/R]]]
+];
+const NS='http://www.w3.org/2000/svg',W=$('#wheel'),cx=170,cy=170;
+const pt=(r,a)=>[cx+r*Math.cos(a),cy+r*Math.sin(a)];
+function arc(r0,r1,a0,a1){const[x0,y0]=pt(r1,a0),[x1,y1]=pt(r1,a1),[x2,y2]=pt(r0,a1),[x3,y3]=pt(r0,a0);const l=a1-a0>Math.PI?1:0;
+  return `M${x0},${y0}A${r1},${r1} 0 ${l} 1 ${x1},${y1}L${x2},${y2}A${r0},${r0} 0 ${l} 0 ${x3},${y3}Z`}
+function el(t,a,txt){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;W.appendChild(e);return e}
+let wheelSel=null;const segEls=[];
+WHEEL.forEach(([q,fs],qi)=>{
+  const base=-Math.PI*3/4+qi*Math.PI/2;
+  el('path',{d:arc(0,72,base,base+Math.PI/2),fill:'var(--sunk)',stroke:'var(--surface)','stroke-width':3});
+  const[tx,ty]=pt(40,base+Math.PI/4);
+  el('text',{x:tx,y:ty+10,'text-anchor':'middle','font-family':'var(--f-display)','font-size':30,'font-weight':600,fill:'var(--ink)'},q);
+  fs.forEach((f,fi)=>{const a0=base+fi*Math.PI/6,a1=a0+Math.PI/6;
+    const p=el('path',{d:arc(78,160,a0,a1),fill:'var(--surface)',stroke:'var(--line)','stroke-width':1,class:'seg',tabindex:0,role:'button','aria-label':`${q} = ${f[0]}`});
+    const[lx,ly]=pt(119,(a0+a1)/2);
+    const t=el('text',{x:lx,y:ly+4,'text-anchor':'middle','font-family':'var(--f-mono)','font-size':11.5,fill:'var(--ink)'},f[0]);
+    segEls.push([p,t]);
+    const pick=()=>{wheelSel={q,f,idx:segEls.length};segEls.forEach(([pp,tt])=>{pp.classList.remove('on');tt.setAttribute('fill','var(--ink)')});p.classList.add('on');t.setAttribute('fill','var(--surface)');renderWheelCalc(q,f)};
+    p.addEventListener('click',pick);p.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pick()}});
+    if(qi===1&&fi===1)setTimeout(pick,0);
+  });
+});
+el('circle',{cx,cy,r:160,fill:'none',stroke:'var(--line)'});
+function renderWheelCalc(q,f){
+  const [expr,target,ins,fn]=f,box=$('#wheelCalc');
+  box.innerHTML=`<span class="eyebrow">Find ${Q[target].n.toLowerCase()}</span><div class="big-f">${q} = ${expr}</div>`+
+   ins.map(k=>`<div class="field"><label for="w-${k}">${Q[k].n} (${Q[k].s})</label><div class="inline"><input type="text" inputmode="decimal" id="w-${k}"><select id="wu-${k}">${Q[k].u.map((u,i)=>`<option value="${i}"${i===Q[k].d?' selected':''}>${u[0]}</option>`).join('')}</select></div></div>`).join('')+
+   `<div class="result-line"><span class="eyebrow">${Q[target].n}</span><span class="v" id="wOut">—</span></div><p class="note" id="wNote"></p>`;
+  const sample={V:'230',I:'10',R:'23',P:'2300'};ins.forEach(k=>$('#w-'+k).value=sample[k]);
+  const calc=()=>{const vals=ins.map(k=>parse($('#w-'+k).value)*Q[k].u[$('#wu-'+k).value][1]);
+    const v=vals.every(isFinite)?fn(...vals):NaN;$('#wOut').textContent=isFinite(v)?Q[target].f(v):'—';
+    $('#wNote').textContent=isFinite(v)?'':'Enter both values.'};
+  box.querySelectorAll('input,select').forEach(e=>e.addEventListener('input',calc));calc();
+}
+
+/* ---------- list combiner ---------- */
+function combiner({rows,add,out,modeEl,units,defU,init,kind,unit}){
+  let mode=modeEl.querySelector('[aria-pressed="true"]').dataset.m;
+  const list=init.slice();
+  function render(){rows.innerHTML='';list.forEach((it,i)=>{const r=document.createElement('div');r.className='lr';
+    r.innerHTML=`<span class="idx">${kind}${i+1}</span><input type="text" inputmode="decimal" id="${kind}v${i}" value="${it[0]}" aria-label="${kind}${i+1} value"><select id="${kind}u${i}" aria-label="unit">${units.map((u,j)=>`<option value="${j}"${j===it[1]?' selected':''}>${u[0]}</option>`).join('')}</select><button class="x" aria-label="Remove">×</button>`;
+    r.querySelector('input').oninput=e=>{it[0]=e.target.value;calc()};
+    r.querySelector('select').onchange=e=>{it[1]=+e.target.value;calc()};
+    r.querySelector('.x').onclick=()=>{if(list.length>1){list.splice(i,1);render()}};
+    rows.appendChild(r)});calc()}
+  function calc(){const vals=list.map(([v,u])=>parse(v)*units[u][1]).filter(v=>isFinite(v)&&v>0);
+    const series=kind==='R'?mode==='s':mode==='p';
+    const tot=!vals.length?NaN:series?vals.reduce((a,b)=>a+b,0):1/vals.reduce((a,b)=>a+1/b,0);
+    const formula=kind==='R'?(mode==='s'?'R = R1 + R2 + …':'1/R = 1/R1 + 1/R2 + …'):(mode==='p'?'C = C1 + C2 + …':'1/C = 1/C1 + 1/C2 + …');
+    out(tot,vals,formula,mode)}
+  modeEl.querySelectorAll('button').forEach(b=>b.onclick=()=>{mode=b.dataset.m;modeEl.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));calc()});
+  add.onclick=()=>{list.push(['',defU]);render();rows.querySelector('.lr:last-child input').focus()};
+  render();
+}
+const E24=[1,1.1,1.2,1.3,1.5,1.6,1.8,2,2.2,2.4,2.7,3,3.3,3.6,3.9,4.3,4.7,5.1,5.6,6.2,6.8,7.5,8.2,9.1];
+function nearestE24(v){const dec=Math.pow(10,Math.floor(Math.log10(v)));let best=null;[dec/10,dec,dec*10].forEach(d=>E24.forEach(m=>{const c=m*d;if(!best||Math.abs(Math.log(c/v))<Math.abs(Math.log(best/v)))best=c}));return best}
+const RU=[['Ω',1],['kΩ',1e3],['MΩ',1e6]],CU=[['pF',1e-12],['nF',1e-9],['µF',1e-6],['mF',1e-3]];
+combiner({rows:$('#rRows'),add:$('#rAdd'),modeEl:$('#rMode'),units:RU,defU:1,kind:'R',init:[['470',0],['1',1],['2.2',1]],
+  out:(t,vals,formula,mode)=>{
+    const e=isFinite(t)?nearestE24(t):NaN;
+    $('#rOut').innerHTML=`<dt>Formula</dt><dd>${formula}</dd><dt>Total</dt><dd class="hi">${eng(t,'Ω')}</dd><dt>Nearest E24 value</dt><dd>${eng(e,'Ω')}</dd>`+
+      (mode==='p'&&vals.length?`<dt>Smallest single resistor</dt><dd>${eng(Math.min(...vals),'Ω')}</dd>`:'');
+    $('#rNote').textContent=mode==='p'?'In parallel the total is always less than the smallest resistor.':'In series the same current flows through every resistor.'}});
+combiner({rows:$('#cRows'),add:$('#cAdd'),modeEl:$('#cMode'),units:CU,defU:2,kind:'C',init:[['10',2],['22',2]],
+  out:(t,vals,formula)=>{$('#cOut').innerHTML=`<dt>Formula</dt><dd>${formula}</dd><dt>Total</dt><dd class="hi">${eng(t,'F')}</dd>`}});
+
+/* ---------- colour code ---------- */
+const COL=[['Black','#1b1b1b'],['Brown','#7a4a24'],['Red','#d12b2b'],['Orange','#ef7a12'],['Yellow','#f2cf1d'],['Green','#2e9b46'],['Blue','#2563d6'],['Violet','#8a3fc7'],['Grey','#8d8d8d'],['White','#f4f4f4']];
+const MULT=COL.map((c,i)=>[c[0],c[1],Math.pow(10,i)]).slice(0,8).concat([['Gold','#c9a43a',0.1],['Silver','#b8bec4',0.01]]);
+const TOL=[['Brown','#7a4a24',1],['Red','#d12b2b',2],['Green','#2e9b46',0.5],['Gold','#c9a43a',5],['Silver','#b8bec4',10]];
+const BANDS=[['Band 1 (digit)',COL,4],['Band 2 (digit)',COL,7],['Multiplier',MULT,2],['Tolerance',TOL,3]];
+$('#bands').innerHTML=BANDS.map((b,i)=>`<div class="field"><label for="band${i}">${b[0]}</label><select id="band${i}">${b[1].map((c,j)=>`<option value="${j}"${j===b[2]?' selected':''}>${c[0]}${i<2?' · '+j:i===2?' · ×'+num(c[2]):' · ±'+c[2]+'%'}</option>`).join('')}</select></div>`).join('');
+function bandsCalc(){const s=[0,1,2,3].map(i=>+$('#band'+i).value);
+  const v=(s[0]*10+s[1])*MULT[s[2]][2],tol=TOL[s[3]][2];
+  $('#bandVal').textContent=eng(v,'Ω')+' ±'+tol+'%';
+  $('#bandRange').textContent=`Measured value should fall between ${eng(v*(1-tol/100),'Ω')} and ${eng(v*(1+tol/100),'Ω')}.`;
+  const cols=[COL[s[0]][1],COL[s[1]][1],MULT[s[2]][1],TOL[s[3]][1]],xs=[96,128,160,222];
+  $('#resSvg').innerHTML=`<line x1="0" y1="40" x2="320" y2="40" stroke="var(--muted)" stroke-width="4"/><rect x="70" y="14" width="180" height="52" rx="22" fill="#d9c49a" stroke="#b9a274"/>`+
+    cols.map((c,i)=>`<rect x="${xs[i]}" y="15" width="14" height="50" fill="${c}"/>`).join('')}
+$$('#bands select').forEach(s=>s.onchange=bandsCalc);bandsCalc();
+
+/* ---------- RC ---------- */
+$('#rcRu').innerHTML=RU.map((u,i)=>`<option value="${u[1]}"${i===1?' selected':''}>${u[0]}</option>`).join('');
+$('#rcCu').innerHTML=CU.map((u,i)=>`<option value="${u[1]}"${i===2?' selected':''}>${u[0]}</option>`).join('');
+function rc(){const R=parse($('#rcR').value)*+$('#rcRu').value,C=parse($('#rcC').value)*+$('#rcCu').value,V=parse($('#rcV').value);
+  const tau=R*C,ok=isFinite(tau)&&tau>0;
+  $('#rcOut').innerHTML=`<dt>Time constant τ = R × C</dt><dd class="hi">${ok?fmtTime(tau):'—'}</dd><dt>Practically full (5τ, 99.3%)</dt><dd>${ok?fmtTime(5*tau):'—'}</dd>`+
+   `<dt>Stored charge Q = C × V</dt><dd>${isFinite(C*V)?eng(C*V,'C'):'—'}</dd><dt>Stored energy E = ½ C V²</dt><dd>${isFinite(C*V)?eng(0.5*C*V*V,'J'):'—'}</dd><dt>Peak current V ÷ R</dt><dd>${isFinite(V/R)?eng(V/R,'A'):'—'}</dd>`;
+  // chart
+  const x0=44,x1=328,y0=160,y1=14,X=k=>x0+(x1-x0)*k/5,Y=f=>y0-(y0-y1)*f;
+  let g='';
+  [0,0.25,0.5,0.75,1].forEach(f=>{g+=`<line x1="${x0}" x2="${x1}" y1="${Y(f)}" y2="${Y(f)}" stroke="var(--line)" stroke-width="1"/><text x="${x0-6}" y="${Y(f)+4}" text-anchor="end">${isFinite(V)?num(V*f,3):''}</text>`});
+  for(let k=0;k<=5;k++)g+=`<text x="${X(k)}" y="${y0+16}" text-anchor="middle">${k?k+'τ':'0'}</text>`;
+  let d='',area='';for(let i=0;i<=100;i++){const k=i/20,f=1-Math.exp(-k);d+=(i?'L':'M')+X(k).toFixed(1)+','+Y(f).toFixed(1)}
+  area=d+`L${X(5)},${y0}L${x0},${y0}Z`;
+  g+=`<path d="${area}" fill="var(--live)" opacity=".12"/><path d="${d}" fill="none" stroke="var(--live)" stroke-width="2.5"/>`;
+  const f1=1-Math.exp(-1);g+=`<line x1="${X(1)}" x2="${X(1)}" y1="${Y(f1)}" y2="${y0}" stroke="var(--muted)" stroke-dasharray="3 3"/><circle cx="${X(1)}" cy="${Y(f1)}" r="4" fill="var(--live)"/><text x="${X(1)+8}" y="${Y(f1)+14}" style="fill:var(--ink)">63.2% at ${ok?fmtTime(tau):'τ'}</text>`;
+  g+=`<text x="${x0-6}" y="8" text-anchor="end">V</text>`;
+  $('#rcChart').innerHTML=g}
+['#rcR','#rcC','#rcV','#rcRu','#rcCu'].forEach(s=>$(s).addEventListener('input',rc));rc();
+
+/* ---------- cable ---------- */
+const SIZES=[1,1.5,2.5,4,6,10,16,25,35,50,70,95,120];
+$('#cbSize').innerHTML=SIZES.map(s=>`<option value="${s}"${s===2.5?' selected':''}>${s}</option>`).join('');
+function cable(){const rho=+$('#cbMat').value,A=+$('#cbSize').value,L=+$('#cbLen').value,I=+$('#cbI').value,V=+$('#cbV').value,k=+$('#cbType').value,lim=+$('#cbLim').value;
+  const Rc=rho*L/A,vd=k*I*Rc,pct=vd/V*100,loss=(k===2?2:3)*I*I*Rc;
+  const okSize=SIZES.find(s=>k*I*rho*L/s/V*100<=lim);
+  const good=pct<=lim;
+  $('#cbPill').textContent=good?'within limit':'over limit';$('#cbPill').className='pill '+(good?'ok':'bad');
+  const scale=Math.max(10,lim*2);
+  $('#cbFill').style.width=Math.min(100,pct/scale*100)+'%';$('#cbFill').classList.toggle('bad',!good);
+  $('#cbMark').style.left=(lim/scale*100)+'%';$('#cbMarkL').textContent=lim+'%';
+  $('#cbOut').innerHTML=`<dt>Resistance per conductor</dt><dd>${eng(Rc,'Ω')}</dd><dt>Voltage drop</dt><dd class="hi">${num(vd,3)} V · ${num(pct,3)}%</dd><dt>Voltage at load</dt><dd>${num(V-vd,4)} V</dd><dt>Heat lost in cable</dt><dd>${eng(loss,'W')}</dd><dt>Smallest size within ${lim}%</dt><dd>${okSize?okSize+' mm²':'over 120 mm²'}</dd>`}
+['#cbMat','#cbSize','#cbLen','#cbI','#cbV','#cbType','#cbLim'].forEach(s=>$(s).addEventListener('input',cable));cable();
+
+/* ---------- running cost ---------- */
+const apps=[['Fridge (averaged over the day)',45,24],['Kettle',2400,0.2],['TV',120,4],['Split-system air conditioner',1800,5],['Washing machine',500,1]];
+function costRender(){const tb=$('#costRows');tb.innerHTML='';apps.forEach((a,i)=>{const tr=document.createElement('tr');
+  tr.innerHTML=`<td><input class="name" id="an${i}" value="${a[0].replace(/"/g,'&quot;')}" aria-label="Appliance name"></td><td class="n"><input type="number" id="aw${i}" value="${a[1]}" min="0" step="any" aria-label="Watts" style="width:6em"></td><td class="n"><input type="number" id="ah${i}" value="${a[2]}" min="0" max="24" step="any" aria-label="Hours per day" style="width:5em"></td><td class="n" data-k></td><td class="n" data-y></td><td><button class="x" aria-label="Remove">×</button></td>`;
+  tr.querySelectorAll('input').forEach((inp,j)=>inp.oninput=()=>{a[j]=j?+inp.value:inp.value;costCalc()});
+  tr.querySelector('.x').onclick=()=>{apps.splice(i,1);costRender()};tb.appendChild(tr)});costCalc()}
+function costCalc(){const rate=(+$('#tariff').value||0)/100;const kwh=apps.map(a=>(+a[1]||0)*(+a[2]||0)/1000);const tot=kwh.reduce((x,y)=>x+y,0),mx=Math.max(...kwh,1e-9);
+  $$('#costRows tr').forEach((tr,i)=>{tr.querySelector('[data-k]').innerHTML=num(kwh[i],3)+`<div class="share" style="width:${kwh[i]/mx*100}%;margin-left:auto"></div>`;tr.querySelector('[data-y]').textContent=money(kwh[i]*rate*365)});
+  $('#tDay').textContent=money(tot*rate);$('#tQ').textContent=money(tot*rate*91);$('#tY').textContent=money(tot*rate*365)}
+$('#costAdd').onclick=()=>{apps.push(['New appliance',100,1]);costRender()};
+$('#tariff').oninput=costCalc;costRender();
+
+/* ---------- units ---------- */
+const BASES=[['V','volts'],['A','amperes'],['Ω','ohms'],['W','watts'],['J','joules'],['C','coulombs'],['F','farads'],['N','newtons'],['m','metres'],['g','grams'],['Hz','hertz']];
+$('#uBase').innerHTML=BASES.map(b=>`<option value="${b[0]}">${b[1]} (${b[0]})</option>`).join('');
+const NAMES={T:'tera',G:'giga',M:'mega',k:'kilo','':'base unit',m:'milli','µ':'micro',n:'nano',p:'pico'};
+function fillPfx(){const u=$('#uBase').value,f=$('#uFrom').value,t=$('#uTo').value;
+  const o=PFX.map(p=>`<option value="${p[0]}">${NAMES[p[1]]} (${p[1]}${u})</option>`).join('');
+  $('#uFrom').innerHTML=o;$('#uTo').innerHTML=o;$('#uFrom').value=f||'1000';$('#uTo').value=t||'1';uconv()}
+function uconv(){const v=parse($('#uVal').value),f=+$('#uFrom').value,t=+$('#uTo').value,u=$('#uBase').value;const p=PFX.find(x=>x[0]===t)[1];
+  $('#uOut').textContent=isFinite(v)?num(v*f/t,10)+' '+p+u:'—'}
+$('#uBase').onchange=fillPfx;['#uVal','#uFrom','#uTo'].forEach(s=>$(s).addEventListener('input',uconv));fillPfx();
+$('#prefTable').innerHTML=PFX.map(p=>`<tr><td>${NAMES[p[1]]}</td><td class="mono">${p[1]||'—'}</td><td class="n">× 10<sup>${Math.round(Math.log10(p[0]))}</sup></td><td class="n">1 ${p[1]}V = ${p[0].toLocaleString('en-AU',{maximumFractionDigits:12})} V</td></tr>`).join('');
+const SI={V:'V',I:'A',R:'Ω',P:'W',E:'J',t:'s',Q:'C',Pin:'W',Pout:'W',eta:'%',F:'N',m:'kg',a:'m/s²',W:'J',d:'m'};
+$('#gloss').innerHTML=Object.keys(Q).map(k=>`<div><b>${Q[k].s}</b><span>${Q[k].n}</span> <span class="u">${SI[k]}</span><p>${Q[k].g}</p></div>`).join('');
+
+/* ---------- tabs ---------- */
+const tabs=$$('#tabs button');
+function show(id,push){if(!$('#p-'+id))id='solve';tabs.forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===id));$$('.panel').forEach(p=>p.hidden=p.id!=='p-'+id);
+  try{localStorage.setItem('cb-tab',id)}catch(e){}if(push)history.replaceState(null,'','#'+id)}
+tabs.forEach(b=>b.onclick=()=>{show(b.dataset.tab,true);window.scrollTo({top:0})});
+let start=(location.hash||'').slice(1);if(!start){try{start=localStorage.getItem('cb-tab')||''}catch(e){}}
+show(start||'solve');
+})();
+</script>
+</body>
+</html>
