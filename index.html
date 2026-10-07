@@ -115,6 +115,8 @@ ol.steps .res{font-family:var(--f-mono);color:var(--live);font-weight:500}
 #wheel .seg{cursor:pointer;transition:fill .15s}
 #wheel .seg:hover{fill:var(--accent-soft)}
 #wheel .seg.on{fill:var(--accent)}
+#wheel .seg:focus{outline:none}
+#wheel .ring{fill:none;stroke:var(--ink);stroke-width:2.5;pointer-events:none}
 #wheel text{pointer-events:none}
 .big-f{font:600 2.3rem/1 var(--f-display);margin:6px 0 14px}
 .result-line{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-top:1px solid var(--line);padding-top:12px;margin-top:12px;flex-wrap:wrap}
@@ -481,6 +483,7 @@ function arc(r0,r1,a0,a1){const[x0,y0]=pt(r1,a0),[x1,y1]=pt(r1,a1),[x2,y2]=pt(r0
   return `M${x0},${y0}A${r1},${r1} 0 ${l} 1 ${x1},${y1}L${x2},${y2}A${r0},${r0} 0 ${l} 0 ${x3},${y3}Z`}
 function el(t,a,txt){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;W.appendChild(e);return e}
 let wheelSel=null;const segEls=[];
+const ring=document.createElementNS(NS,'path');ring.setAttribute('class','ring');ring.hidden=true;
 WHEEL.forEach(([q,fs],qi)=>{
   const base=-Math.PI*3/4+qi*Math.PI/2;
   el('path',{d:arc(0,72,base,base+Math.PI/2),fill:'var(--sunk)',stroke:'var(--surface)','stroke-width':3});
@@ -492,11 +495,12 @@ WHEEL.forEach(([q,fs],qi)=>{
     const t=el('text',{x:lx,y:ly+4,'text-anchor':'middle','font-family':'var(--f-mono)','font-size':11.5,fill:'var(--ink)'},f[0]);
     segEls.push([p,t]);
     const pick=()=>{wheelSel={q,f,idx:segEls.length};segEls.forEach(([pp,tt])=>{pp.classList.remove('on');tt.setAttribute('fill','var(--ink)')});p.classList.add('on');t.setAttribute('fill','var(--surface)');renderWheelCalc(q,f)};
-    p.addEventListener('click',pick);p.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pick()}});
+    p.addEventListener('click',pick);p.addEventListener('focus',()=>{if(p.matches(':focus-visible')){ring.setAttribute('d',p.getAttribute('d'));ring.hidden=false}});p.addEventListener('blur',()=>{ring.hidden=true});p.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pick()}});
     if(qi===1&&fi===1)setTimeout(pick,0);
   });
 });
 el('circle',{cx,cy,r:160,fill:'none',stroke:'var(--line)'});
+W.appendChild(ring);
 function renderWheelCalc(q,f){
   const [expr,target,ins,fn]=f,box=$('#wheelCalc');
   box.innerHTML=`<span class="eyebrow">Find ${Q[target].n.toLowerCase()}</span><div class="big-f">${q} = ${expr}</div>`+
